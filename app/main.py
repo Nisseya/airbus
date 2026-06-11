@@ -15,7 +15,7 @@ def _img_b64(path):
 
 
 st.set_page_config(
-    page_title="Airbus | Corrosion Risk Monitor",
+    page_title="Airbus | Surveillance Corrosion",
     page_icon="✈️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -30,7 +30,7 @@ with st.sidebar:
     <div style="padding:20px 12px 24px 12px; border-bottom:1px solid rgba(255,255,255,0.15); margin-bottom:8px;">
         <img src="data:image/png;base64,{logo}" style="height:60px;">
         <div style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:600; letter-spacing:0.1em; margin-top:8px;">
-            CORROSION RISK MONITOR
+            SURVEILLANCE CORROSION
         </div>
     </div>
     """,
@@ -39,7 +39,7 @@ with st.sidebar:
 
     selected = option_menu(
         menu_title=None,
-        options=["Overview", "Fleet", "Aircraft Detail", "Simulator", "Insights & ROI"],
+        options=["Vue d'ensemble", "Flotte", "Détail appareil", "Simulateur", "Analyse & ROI"],
         icons=[
             "house-fill",
             "airplane-fill",
@@ -84,11 +84,11 @@ with st.sidebar:
 from views import overview, fleet, aircraft, simulator, insights
 
 VIEWS = {
-    "Overview": overview.show,
-    "Fleet": fleet.show,
-    "Aircraft Detail": aircraft.show,
-    "Simulator": simulator.show,
-    "Insights & ROI": insights.show,
+    "Vue d'ensemble": overview.show,
+    "Flotte":         fleet.show,
+    "Détail appareil":aircraft.show,
+    "Simulateur":     simulator.show,
+    "Analyse & ROI":  insights.show,
 }
 
 VIEWS[selected]()

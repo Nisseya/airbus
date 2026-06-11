@@ -49,12 +49,12 @@ DEFAULT_EXTRAS = dict(
 def show():
     st.markdown("""
     <div class="page-header">
-        <h1>Risk Simulator</h1>
-        <p>Adjust environmental conditions and observe corrosion risk in real time</p>
+        <h1>Simulateur de risque</h1>
+        <p>Ajustez les conditions environnementales et observez le risque en temps réel</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("**Quick Scenario Presets**")
+    st.markdown("**Scénarios prédéfinis**")
     cols_p = st.columns(4)
     for i, name in enumerate(PRESETS):
         with cols_p[i]:
@@ -66,17 +66,17 @@ def show():
 
     left, right = st.columns(2)
     with left:
-        st.markdown("**Weather Conditions**")
-        temp     = st.slider("🌡️ Temperature (°C)", -20.0, 50.0, float(preset_values['metar_temperature_c']), 0.5)
-        humidity = st.slider("💧 Relative Humidity (%)", 0.0, 100.0, float(preset_values['metar_relative_humidity']), 1.0)
-        precip   = st.slider("🌧️ Precipitation (mm/h)", 0.0, 0.5, float(preset_values['metar_hour_precipitation']), 0.01)
-        parking  = st.slider("⏱️ Monthly Parking (min)", 1000, 44640, int(preset_values['total_parking_minutes']), 500)
-        st.caption(f"→ {parking/44640*100:.0f}% of the month on ground")
+        st.markdown("**Conditions météorologiques**")
+        temp     = st.slider("🌡️ Température (°C)", -20.0, 50.0, float(preset_values['metar_temperature_c']), 0.5)
+        humidity = st.slider("💧 Humidité relative (%)", 0.0, 100.0, float(preset_values['metar_relative_humidity']), 1.0)
+        precip   = st.slider("🌧️ Précipitations (mm/h)", 0.0, 0.5, float(preset_values['metar_hour_precipitation']), 0.01)
+        parking  = st.slider("⏱️ Parking mensuel (min)", 1000, 44640, int(preset_values['total_parking_minutes']), 500)
+        st.caption(f"→ {parking/44640*100:.0f}% du mois au sol")
 
     with right:
-        st.markdown("**Atmospheric Exposure**")
-        sea_salt = st.slider("🌊 Sea Salt (×10⁻¹⁰)", 0.0, 20.0, float(preset_values['sea_salt_aerosol_05_5_mixing_ratio'])*1e10, 0.1)
-        dust     = st.slider("🏜️ Dust (×10⁻⁹)", 0.0, 50.0, float(preset_values['dust_aerosol_003_055_mixing_ratio'])*1e9, 0.5)
+        st.markdown("**Exposition atmosphérique**")
+        sea_salt = st.slider("🌊 Sel marin (×10⁻¹⁰)", 0.0, 20.0, float(preset_values['sea_salt_aerosol_05_5_mixing_ratio'])*1e10, 0.1)
+        dust     = st.slider("🏜️ Poussière (×10⁻⁹)", 0.0, 50.0, float(preset_values['dust_aerosol_003_055_mixing_ratio'])*1e9, 0.5)
         so2      = st.slider("🏭 SO₂ (×10⁻⁸)", 0.0, 10.0, float(preset_values['sulphur_dioxide_mass_mixing_ratio'])*1e8, 0.1)
         no2      = st.slider("🚗 NO₂ (×10⁻⁸)", 0.0, 15.0, float(preset_values['nitrogen_dioxide_mass_mixing_ratio'])*1e8, 0.1)
 
@@ -95,10 +95,10 @@ def show():
 
     risk_score = predict_single(features)
     gauge_color = AIRBUS_COLORS['red'] if risk_score > 0.7 else AIRBUS_COLORS['orange'] if risk_score > 0.4 else AIRBUS_COLORS['green']
-    risk_label  = "HIGH RISK" if risk_score > 0.7 else "MEDIUM RISK" if risk_score > 0.4 else "LOW RISK"
+    risk_label  = "RISQUE ÉLEVÉ" if risk_score > 0.7 else "RISQUE MODÉRÉ" if risk_score > 0.4 else "RISQUE FAIBLE"
 
     st.markdown("---")
-    st.markdown("**Predicted Corrosion Risk**")
+    st.markdown("**Risque de corrosion prédit**")
     col_gauge, col_factors = st.columns([1, 2])
 
     with col_gauge:
@@ -122,24 +122,24 @@ def show():
         st.plotly_chart(fig_gauge, use_container_width=True)
 
     with col_factors:
-        st.markdown("**Key Risk Drivers**")
+        st.markdown("**Principaux facteurs de risque**")
         factors = pd.DataFrame([
-            ("Humidity",      humidity / 100),
-            ("Parking time",  parking / 44640),
-            ("Sea salt",      min(sea_salt / 20, 1)),
-            ("SO₂",           min(so2 / 10, 1)),
-            ("NO₂",           min(no2 / 15, 1)),
-            ("Dust",          min(dust / 50, 1)),
-            ("Temp. stress",  abs(temp - 15) / 35),
-            ("Precipitation", min(precip / 0.5, 1)),
-        ], columns=['Factor', 'Score']).sort_values('Score')
+            ("Humidité",        humidity / 100),
+            ("Temps au sol",    parking / 44640),
+            ("Sel marin",       min(sea_salt / 20, 1)),
+            ("SO₂",             min(so2 / 10, 1)),
+            ("NO₂",             min(no2 / 15, 1)),
+            ("Poussière",       min(dust / 50, 1)),
+            ("Stress thermique",abs(temp - 15) / 35),
+            ("Précipitations",  min(precip / 0.5, 1)),
+        ], columns=['Facteur', 'Score']).sort_values('Score')
 
         fig_f = go.Figure(go.Bar(
-            x=factors['Score'], y=factors['Factor'], orientation='h',
+            x=factors['Score'], y=factors['Facteur'], orientation='h',
             marker=dict(color=factors['Score'],
                         colorscale=[[0, AIRBUS_COLORS['green']], [0.5, AIRBUS_COLORS['orange']], [1, AIRBUS_COLORS['red']]]),
             text=[f"{v:.0%}" for v in factors['Score']],
             textposition='outside', textfont=dict(color=AIRBUS_COLORS['text'], size=12),
         ))
-        fig_f.update_layout(**PLOTLY_LAYOUT, height=300, xaxis_range=[0, 1.25], xaxis_title="Severity")
+        fig_f.update_layout(**PLOTLY_LAYOUT, height=300, xaxis_range=[0, 1.25], xaxis_title="Sévérité")
         st.plotly_chart(fig_f, use_container_width=True)
