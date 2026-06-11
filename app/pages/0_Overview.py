@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
 import pandas as pd
@@ -9,27 +9,8 @@ import plotly.express as px
 from model import get_predictions, get_fleet_summary, load_or_train_model
 from theme import AIRBUS_CSS, PLOTLY_LAYOUT, AIRBUS_COLORS
 
-st.set_page_config(
-    page_title="Airbus | Corrosion Risk Monitor",
-    page_icon="✈️",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-
-st.markdown(AIRBUS_CSS, unsafe_allow_html=True)
 
 # ─── Sidebar header ───────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-    <div style="padding: 16px 0 24px 0; border-bottom: 1px solid rgba(0,130,200,0.2); margin-bottom: 16px;">
-        <div style="font-size: 22px; font-weight: 800; letter-spacing: 0.1em; color: white;">✈ AIRBUS</div>
-        <div style="font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 500; letter-spacing: 0.08em; margin-top: 2px;">
-            CORROSION RISK MONITOR
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
 # ─── Load data (with spinner on first run) ────────────────────────────────────
 with st.spinner("Loading model & predictions…"):
     fleet = get_fleet_summary()

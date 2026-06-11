@@ -4,8 +4,19 @@ AIRBUS_CSS = """
 
 * { font-family: 'Inter', sans-serif !important; }
 
-#MainMenu, footer { visibility: hidden; }
-header { visibility: hidden; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* Keep sidebar always visible */
+[data-testid="stSidebar"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+section[data-testid="stSidebar"] > div {
+    display: block !important;
+    visibility: visible !important;
+}
 
 /* ─── Background ─────────────────────────────────── */
 .stApp {

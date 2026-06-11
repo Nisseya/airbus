@@ -9,17 +9,6 @@ import plotly.express as px
 from model import get_fleet_summary, get_predictions
 from theme import AIRBUS_CSS, PLOTLY_LAYOUT, AIRBUS_COLORS
 
-st.set_page_config(page_title="Fleet | Airbus CRM", page_icon="🛫", layout="wide")
-st.markdown(AIRBUS_CSS, unsafe_allow_html=True)
-
-with st.sidebar:
-    st.markdown("""
-    <div style="padding: 16px 0 24px 0; border-bottom: 1px solid rgba(0,130,200,0.2); margin-bottom: 16px;">
-        <div style="font-size: 22px; font-weight: 800; letter-spacing: 0.1em; color: white;">✈ AIRBUS</div>
-        <div style="font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 500; letter-spacing: 0.08em; margin-top: 2px;">CORROSION RISK MONITOR</div>
-    </div>
-    """, unsafe_allow_html=True)
-
 st.markdown("""
 <div class="page-header">
     <h1>🛫 Fleet Management</h1>
