@@ -2,9 +2,14 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import base64
 import streamlit as st
 from streamlit_option_menu import option_menu
 from theme import AIRBUS_CSS
+
+def _img_b64(path):
+    with open(Path(__file__).parent / path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
 st.set_page_config(
     page_title="Airbus | Corrosion Risk Monitor",
@@ -16,10 +21,11 @@ st.set_page_config(
 st.markdown(AIRBUS_CSS, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("""
+    logo = _img_b64("assets/airbus-logo.png")
+    st.markdown(f"""
     <div style="padding:20px 12px 24px 12px; border-bottom:1px solid rgba(255,255,255,0.15); margin-bottom:8px;">
-        <div style="font-size:24px; font-weight:800; letter-spacing:0.12em; color:white;">✈ AIRBUS</div>
-        <div style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:600; letter-spacing:0.1em; margin-top:4px;">
+        <img src="data:image/png;base64,{logo}" style="height:60px;">
+        <div style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:600; letter-spacing:0.1em; margin-top:8px;">
             CORROSION RISK MONITOR
         </div>
     </div>
