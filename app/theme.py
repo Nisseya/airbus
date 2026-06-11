@@ -1,11 +1,45 @@
 AIRBUS_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded' !important;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 
 * { font-family: 'Inter', sans-serif !important; }
 
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
+
+/* Hide sidebar collapse button — all possible selectors */
+[data-testid="collapsedControl"]           { display: none !important; }
+[data-testid="stSidebarCollapseButton"]    { display: none !important; }
+button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
+
+/* Fix icon font fallback — hide raw icon text */
+.material-symbols-rounded,
+.material-icons,
+.material-symbols-outlined {
+    font-family: 'Material Symbols Rounded', sans-serif !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    max-width: 24px !important;
+}
+
+/* option_menu nav links — force transparent background */
+[data-testid="stSidebar"] nav a,
+[data-testid="stSidebar"] nav li,
+[data-testid="stSidebar"] .nav-link {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+[data-testid="stSidebar"] nav a:hover,
+[data-testid="stSidebar"] .nav-link:hover {
+    background-color: rgba(255,255,255,0.1) !important;
+}
 
 /* Keep sidebar always visible */
 [data-testid="stSidebar"] {
@@ -102,11 +136,19 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Selectbox / Input ───────────────────────────── */
 .stSelectbox > div > div,
-.stMultiSelect > div > div {
+.stMultiSelect > div > div,
+.stTextInput > div > div,
+[data-baseweb="input"],
+[data-baseweb="select"] > div {
     background: white !important;
     border: 1px solid #c8d9ea !important;
     border-radius: 8px !important;
     color: #00205B !important;
+}
+
+/* ─── Code blocks and expanders keep white bg ─────── */
+.stCodeBlock, [data-testid="stExpander"] {
+    background: white !important;
 }
 
 /* ─── Sliders ─────────────────────────────────────── */
