@@ -131,6 +131,14 @@ def get_feature_importance():
     }).sort_values('importance', ascending=False).reset_index(drop=True)
 
 
+def get_corrosion_events():
+    cor = pd.read_csv(DATA_DIR / "corrosions_training.csv", parse_dates=['observation_date'])
+    cor = cor.sort_values('observation_date').reset_index(drop=True)
+    cor['n'] = range(1, len(cor) + 1)
+    cor['year'] = cor['observation_date'].dt.year
+    return cor
+
+
 def get_fleet_summary():
     preds = get_predictions()
     summary = preds.groupby('aircraft_id').agg(

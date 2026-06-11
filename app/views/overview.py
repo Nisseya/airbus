@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from model import get_predictions, get_fleet_summary
+from model import get_predictions, get_fleet_summary, get_corrosion_events
 from theme import PLOTLY_LAYOUT, AIRBUS_COLORS
 
 
 def show():
-    fleet = get_fleet_summary()
-    preds = get_predictions()
+    fleet    = get_fleet_summary()
+    preds    = get_predictions()
+    cor      = get_corrosion_events()
 
     st.markdown("""
     <div class="page-header">
@@ -110,3 +111,82 @@ def show():
     high_df = high_df.rename(columns={'aircraft_id': 'Appareil', 'months': 'Mois suivis', 'last_month': 'Dernier relevé'})
     st.dataframe(high_df[['Appareil', 'Risque max', 'Risque moyen', 'Mois suivis', 'Dernier relevé']],
                  use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    col_tl, col_dist = st.columns(2)
+
+    with col_tl:
+        st.markdown("**Chronologie des événements de corrosion**")
+        year_palette = {
+            yr: c for yr, c in zip(
+                sorted(cor['year'].unique()),
+                [AIRBUS_COLORS['navy'], '#1a5276', '#1f618d', AIRBUS_COLORS['blue'],
+                 '#2e86c1', '#3498db', '#5dade2', '#85c1e9',
+                 AIRBUS_COLORS['orange'], AIRBUS_COLORS['red'], '#c0392b']
+            )
+        }
+        fig_tl = go.Figure()
+        for yr, grp in cor.groupby('year'):
+            fig_tl.add_trace(go.Scatter(
+                x=grp['observation_date'], y=grp['aircraft_id'],
+                mode='markers',
+                name=str(yr),
+                marker=dict(color=year_palette.get(yr, AIRBUS_COLORS['blue']),
+                            size=7, opacity=0.85, line=dict(width=0.5, color='white')),
+                customdata=grp[['aircraft_delivery_year']].values,
+                hovertemplate=(
+                    "<b>Appareil %{y}</b><br>"
+                    "Date corrosion : %{x|%d/%m/%Y}<br>"
+                    "Livraison : %{customdata[0]}"
+                    "<extra></extra>"
+                ),
+            ))
+        layout_tl = {
+            **PLOTLY_LAYOUT,
+            'height': 420,
+            'xaxis_title': "Date de corrosion",
+            'yaxis': dict(title="Appareil", tickfont=dict(size=9), gridcolor='#e8eef4', color='#6b7e9a'),
+            'legend_title': "Année",
+        }
+        fig_tl.update_layout(**layout_tl)
+        st.plotly_chart(fig_tl, use_container_width=True)
+        st.caption(f"{len(cor)} événements de corrosion — {cor['year'].min()}–{cor['year'].max()}")
+
+    with col_dist:
+        st.markdown("**Distribution des observations environnementales par année**")
+        preds['year'] = preds['year_month'].str[:4].astype(int)
+        obs_year = preds.groupby('year').size().reset_index(name='observations')
+        cor_year = cor.groupby('year').size().reset_index(name='corrosions')
+
+        fig_dist = go.Figure()
+        fig_dist.add_trace(go.Bar(
+            x=obs_year['year'], y=obs_year['observations'],
+            name='Observations', marker_color=AIRBUS_COLORS['blue'],
+            opacity=0.85,
+            hovertemplate="Année %{x}<br>Observations : %{y}<extra></extra>",
+        ))
+        fig_dist.add_trace(go.Bar(
+            x=cor_year['year'], y=cor_year['corrosions'],
+            name='Corrosions', marker_color=AIRBUS_COLORS['red'],
+            opacity=0.9, yaxis='y2',
+            hovertemplate="Année %{x}<br>Corrosions : %{y}<extra></extra>",
+        ))
+        fig_dist.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,32,91,0.02)',
+            font=dict(color='#1a2e4a', family='Inter'),
+            height=380, barmode='group',
+            xaxis_title="Année",
+            legend=dict(orientation='h', y=1.08, x=0, bgcolor='rgba(0,0,0,0)'),
+            margin=dict(l=16, r=16, t=40, b=16),
+        )
+        fig_dist.layout.yaxis.update(
+            title=dict(text="Nb observations"),
+            gridcolor='#e8eef4', color=AIRBUS_COLORS['blue'],
+        )
+        fig_dist.layout.yaxis2 = go.layout.YAxis(
+            title=dict(text="Nb corrosions"),
+            overlaying='y', side='right',
+            showgrid=False, color=AIRBUS_COLORS['red'],
+        )
+        st.plotly_chart(fig_dist, use_container_width=True)
+        st.caption("Axe gauche : observations environnementales mensuelles · Axe droit : cas de corrosion détectés")
