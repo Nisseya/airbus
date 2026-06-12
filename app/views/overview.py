@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from model import get_predictions, get_fleet_summary, get_corrosion_events
+from model import (get_predictions, get_fleet_summary, get_corrosion_events,
+                   get_corrosion_age_exposure, get_partial_correlations)
 from theme import PLOTLY_LAYOUT, AIRBUS_COLORS
 
 
@@ -113,80 +114,116 @@ def show():
                  use_container_width=True, hide_index=True)
 
     st.markdown("---")
-    col_tl, col_dist = st.columns(2)
+    st.markdown("**Distribution des observations environnementales par année**")
+    preds['year'] = preds['year_month'].str[:4].astype(int)
+    obs_year = preds.groupby('year').size().reset_index(name='observations')
+    cor_year = cor.groupby('year').size().reset_index(name='corrosions')
 
-    with col_tl:
-        st.markdown("**Chronologie des événements de corrosion**")
-        year_palette = {
-            yr: c for yr, c in zip(
-                sorted(cor['year'].unique()),
-                [AIRBUS_COLORS['navy'], '#1a5276', '#1f618d', AIRBUS_COLORS['blue'],
-                 '#2e86c1', '#3498db', '#5dade2', '#85c1e9',
-                 AIRBUS_COLORS['orange'], AIRBUS_COLORS['red'], '#c0392b']
-            )
-        }
-        fig_tl = go.Figure()
-        for yr, grp in cor.groupby('year'):
-            fig_tl.add_trace(go.Scatter(
-                x=grp['observation_date'], y=grp['aircraft_id'],
-                mode='markers',
-                name=str(yr),
-                marker=dict(color=year_palette.get(yr, AIRBUS_COLORS['blue']),
-                            size=7, opacity=0.85, line=dict(width=0.5, color='white')),
-                customdata=grp[['aircraft_delivery_year']].values,
-                hovertemplate=(
-                    "<b>Appareil %{y}</b><br>"
-                    "Date corrosion : %{x|%d/%m/%Y}<br>"
-                    "Livraison : %{customdata[0]}"
-                    "<extra></extra>"
-                ),
-            ))
-        layout_tl = {
-            **PLOTLY_LAYOUT,
-            'height': 420,
-            'xaxis_title': "Date de corrosion",
-            'yaxis': dict(title="Appareil", tickfont=dict(size=9), gridcolor='#e8eef4', color='#6b7e9a'),
-            'legend_title': "Année",
-        }
-        fig_tl.update_layout(**layout_tl)
-        st.plotly_chart(fig_tl, use_container_width=True)
-        st.caption(f"{len(cor)} événements de corrosion — {cor['year'].min()}–{cor['year'].max()}")
+    fig_dist = go.Figure()
+    fig_dist.add_trace(go.Bar(
+        x=obs_year['year'], y=obs_year['observations'],
+        name='Observations', marker_color=AIRBUS_COLORS['blue'],
+        opacity=0.85,
+        hovertemplate="Année %{x}<br>Observations : %{y}<extra></extra>",
+    ))
+    fig_dist.add_trace(go.Bar(
+        x=cor_year['year'], y=cor_year['corrosions'],
+        name='Corrosions', marker_color=AIRBUS_COLORS['red'],
+        opacity=0.9, yaxis='y2',
+        hovertemplate="Année %{x}<br>Corrosions : %{y}<extra></extra>",
+    ))
+    fig_dist.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,32,91,0.02)',
+        font=dict(color='#1a2e4a', family='Inter'),
+        height=380, barmode='group',
+        xaxis_title="Année",
+        legend=dict(orientation='h', y=1.08, x=0, bgcolor='rgba(0,0,0,0)'),
+        margin=dict(l=16, r=16, t=40, b=16),
+    )
+    fig_dist.layout.yaxis.update(
+        title=dict(text="Nb observations"),
+        gridcolor='#e8eef4', color=AIRBUS_COLORS['blue'],
+    )
+    fig_dist.layout.yaxis2 = go.layout.YAxis(
+        title=dict(text="Nb corrosions"),
+        overlaying='y', side='right',
+        showgrid=False, color=AIRBUS_COLORS['red'],
+    )
+    st.plotly_chart(fig_dist, use_container_width=True)
+    st.caption("Axe gauche : observations environnementales mensuelles · Axe droit : cas de corrosion détectés")
 
-    with col_dist:
-        st.markdown("**Distribution des observations environnementales par année**")
-        preds['year'] = preds['year_month'].str[:4].astype(int)
-        obs_year = preds.groupby('year').size().reset_index(name='observations')
-        cor_year = cor.groupby('year').size().reset_index(name='corrosions')
+    st.markdown("---")
+    st.markdown("**🔬 Facteurs de corrosion précoce — analyse exploratoire**")
 
-        fig_dist = go.Figure()
-        fig_dist.add_trace(go.Bar(
-            x=obs_year['year'], y=obs_year['observations'],
-            name='Observations', marker_color=AIRBUS_COLORS['blue'],
-            opacity=0.85,
-            hovertemplate="Année %{x}<br>Observations : %{y}<extra></extra>",
+    age_expo = get_corrosion_age_exposure()
+    pcorr = get_partial_correlations()
+
+    st.caption(
+        f"Sur les {len(age_expo)} appareils corrodés du jeu d'entraînement (âge médian au premier "
+        f"constat : {age_expo['age_y'].median():.1f} ans), quelles expositions sont liées à une "
+        "corrosion plus précoce, une fois neutralisés les facteurs connus "
+        "(sel marin, humidité, temps au sol) ?"
+    )
+
+    col_pc, col_dec = st.columns([3, 2])
+
+    with col_pc:
+        st.markdown("**Effet indépendant de chaque exposition sur l'âge au 1er constat**")
+        signif = pcorr[pcorr['t'].abs() >= 2].sort_values('r_partial', ascending=False)
+        bar_colors = [AIRBUS_COLORS['red'] if r < 0 else AIRBUS_COLORS['green']
+                      for r in signif['r_partial']]
+        fig_pc = go.Figure(go.Bar(
+            x=signif['r_partial'], y=signif['label'], orientation='h',
+            marker_color=bar_colors,
+            text=[f"{v:+.2f}" for v in signif['r_partial']],
+            textposition='outside', textfont=dict(color=AIRBUS_COLORS['text'], size=11),
         ))
-        fig_dist.add_trace(go.Bar(
-            x=cor_year['year'], y=cor_year['corrosions'],
-            name='Corrosions', marker_color=AIRBUS_COLORS['red'],
-            opacity=0.9, yaxis='y2',
-            hovertemplate="Année %{x}<br>Corrosions : %{y}<extra></extra>",
+        layout_pc = {**PLOTLY_LAYOUT, 'margin': dict(l=170, r=50, t=16, b=16)}
+        fig_pc.update_layout(**layout_pc, height=400,
+                             xaxis_title="Corrélation partielle avec l'âge au 1er constat")
+        st.plotly_chart(fig_pc, use_container_width=True)
+        st.caption(
+            "Effets significatifs uniquement (|t| ≥ 2). 🔴 Négatif = avance la corrosion, "
+            "indépendamment du sel, de l'humidité et du parking · 🟢 Positif = la retarde. "
+            "Le vent et le sel grossier (particules 5–20 µm, retombée très locale) dominent : "
+            "à concentration de sel égale, le vent accélère le dépôt sur la cellule."
+        )
+
+    with col_dec:
+        st.markdown("**Extrêmes d'exposition : corrosion combien plus tôt ?**")
+        DECILE_FACTORS = [
+            ('metar_wind_speed_kn', 'Vent'),
+            ('sea_salt_aerosol_5_20_mixing_ratio', 'Sel marin (grossier)'),
+            ('ozone_mass_mixing_ratio', 'Ozone'),
+        ]
+        names, age_lo, age_hi = [], [], []
+        for col, name in DECILE_FACTORS:
+            lo = age_expo[age_expo[col] <= age_expo[col].quantile(0.1)]['age_y'].median()
+            hi = age_expo[age_expo[col] >= age_expo[col].quantile(0.9)]['age_y'].median()
+            names.append(name); age_lo.append(lo); age_hi.append(hi)
+
+        fig_dec = go.Figure()
+        fig_dec.add_trace(go.Bar(
+            x=names, y=age_lo, name='10% les moins exposés',
+            marker_color=AIRBUS_COLORS['blue'],
+            text=[f"{v:.1f}" for v in age_lo], textposition='outside',
+            textfont=dict(color=AIRBUS_COLORS['text']),
         ))
-        fig_dist.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,32,91,0.02)',
-            font=dict(color='#1a2e4a', family='Inter'),
-            height=380, barmode='group',
-            xaxis_title="Année",
-            legend=dict(orientation='h', y=1.08, x=0, bgcolor='rgba(0,0,0,0)'),
-            margin=dict(l=16, r=16, t=40, b=16),
+        fig_dec.add_trace(go.Bar(
+            x=names, y=age_hi, name='10% les plus exposés',
+            marker_color=AIRBUS_COLORS['red'],
+            text=[f"{v:.1f}" for v in age_hi], textposition='outside',
+            textfont=dict(color=AIRBUS_COLORS['text']),
+        ))
+        fig_dec.update_layout(**PLOTLY_LAYOUT, height=400, barmode='group',
+                              yaxis_title="Âge médian au 1er constat (ans)")
+        st.plotly_chart(fig_dec, use_container_width=True)
+        delta_salt = (age_lo[1] - age_hi[1]) * 12
+        delta_wind = (age_lo[0] - age_hi[0]) * 12
+        st.caption(
+            f"Les 10 % d'appareils les plus exposés au sel grossier corrodent "
+            f"~{delta_salt:.0f} mois plus tôt que les moins exposés ; "
+            f"pour le vent l'écart est de ~{delta_wind:.0f} mois. "
+            "Lecture : c'est l'aéroport « les pieds dans l'eau » et venteux qui tue, "
+            "pas le sel diffus régional."
         )
-        fig_dist.layout.yaxis.update(
-            title=dict(text="Nb observations"),
-            gridcolor='#e8eef4', color=AIRBUS_COLORS['blue'],
-        )
-        fig_dist.layout.yaxis2 = go.layout.YAxis(
-            title=dict(text="Nb corrosions"),
-            overlaying='y', side='right',
-            showgrid=False, color=AIRBUS_COLORS['red'],
-        )
-        st.plotly_chart(fig_dist, use_container_width=True)
-        st.caption("Axe gauche : observations environnementales mensuelles · Axe droit : cas de corrosion détectés")

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from model import get_feature_importance, get_predictions, get_fleet_summary
+from model import get_feature_importance, get_predictions, get_fleet_summary, get_discriminant_factors
 from theme import PLOTLY_LAYOUT, AIRBUS_COLORS
 
 
@@ -18,7 +18,7 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["🧠 Explicabilité du modèle", "💶 Calculateur ROI", "🌍 Profil environnemental"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🧠 Explicabilité du modèle", "💶 Calculateur ROI", "🌍 Profil environnemental", "🔍 Facteurs discriminants"])
 
     with tab1:
         col_fi, col_txt = st.columns([2, 1])
@@ -142,3 +142,62 @@ def show():
         summary = profile.groupby('Niveau')[PROFILE_COLS].mean().round(4)
         summary.columns = ['Temp. (°C)', 'Humidité (%)', 'Sel marin', 'Poussière', 'SO₂', 'NO₂', 'Parking (min)']
         st.dataframe(summary, use_container_width=True)
+
+    with tab4:
+        st.markdown("**Facteurs discriminants — Corrosion précoce vs tardive**")
+        st.caption(
+            "Écart à la moyenne de la flotte (en écarts-types) pour les avions ayant corrodé tôt vs tard dans leur vie. "
+            "La médiane est ~72 mois après livraison."
+        )
+
+        disc = get_discriminant_factors(n=15)
+
+        COLOR_PRE  = '#B85450'
+        COLOR_TARD = '#6C8EBF'
+
+        fig_disc = go.Figure()
+        fig_disc.add_trace(go.Bar(
+            x=disc['précoce'], y=disc['label'],
+            orientation='h', name='Corrosion précoce',
+            marker_color=COLOR_PRE, opacity=0.85,
+            hovertemplate='<b>%{y}</b><br>Précoce : %{x:.3f} σ<extra></extra>',
+        ))
+        fig_disc.add_trace(go.Bar(
+            x=disc['tardive'], y=disc['label'],
+            orientation='h', name='Corrosion tardive',
+            marker_color=COLOR_TARD, opacity=0.85,
+            hovertemplate='<b>%{y}</b><br>Tardive : %{x:.3f} σ<extra></extra>',
+        ))
+        fig_disc.add_vline(x=0, line_dash='dash', line_color='#333333', line_width=1.5)
+        layout_disc = {
+            **PLOTLY_LAYOUT,
+            'legend': dict(orientation='h', y=1.04, x=1, xanchor='right', bgcolor='rgba(0,0,0,0)'),
+            'margin': dict(l=180, r=40, t=50, b=40),
+        }
+        fig_disc.update_layout(
+            **layout_disc,
+            height=520,
+            barmode='group',
+            xaxis_title="Écart à la référence (en écarts-types)",
+        )
+        st.plotly_chart(fig_disc, use_container_width=True)
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            top_pre = disc.sort_values('précoce', ascending=False).iloc[0]
+            st.markdown(f"""
+            <div class="airbus-card">
+                <div style="font-size:12px; font-weight:700; color:{COLOR_PRE};">Principal marqueur précoce</div>
+                <div style="font-size:20px; font-weight:800; color:{AIRBUS_COLORS['navy']};">{top_pre['label']}</div>
+                <div style="font-size:13px; color:{AIRBUS_COLORS['muted']};">+{top_pre['précoce']:.2f} σ vs flotte</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_b:
+            top_tard = disc.sort_values('tardive', ascending=False).iloc[0]
+            st.markdown(f"""
+            <div class="airbus-card">
+                <div style="font-size:12px; font-weight:700; color:{COLOR_TARD};">Principal marqueur tardif</div>
+                <div style="font-size:20px; font-weight:800; color:{AIRBUS_COLORS['navy']};">{top_tard['label']}</div>
+                <div style="font-size:13px; color:{AIRBUS_COLORS['muted']};">+{top_tard['tardive']:.2f} σ vs flotte</div>
+            </div>
+            """, unsafe_allow_html=True)

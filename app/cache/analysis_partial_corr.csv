@@ -1,0 +1,31 @@
+feature,label,r_partial,t
+sea_salt_aerosol_5_20_mixing_ratio,Sel marin (grossier),-0.3505567140214297,-10.291819438477262
+sea_salt_aerosol_003_05_mixing_ratio,Sel marin (fin),-0.2811789733387602,-8.05616683052532
+metar_wind_speed_kn,Vitesse du vent (kn),-0.21814651385287623,-6.14605897102558
+ozone_mass_mixing_ratio,Ozone,-0.10848359925571406,-3.0005141490244402
+metar_hour_precipitation,Précipitations,-0.07672810463346856,-2.115911678300871
+hno3,Acide nitrique (HNO₃),-0.04917168060167217,-1.3536351269721894
+dust_aerosol_09_20_mixing_ratio,Poussière (grossier),-0.04491968336769707,-1.2363350500009822
+oh,Radical hydroxyle (OH),-0.04069465127536709,-1.1198455660370654
+metar_dew_point_c,Point de rosée (°C),-0.023418610455887466,-0.6440819720926789
+dust_aerosol_055_09_mixing_ratio,Poussière (moyen),-0.021510494440050335,-0.591577691784493
+specific_humidity,Humidité spécifique,-0.020942058620116312,-0.5759377213107505
+metar_visibility_mi,Visibilité (mi),-0.016347253051868352,-0.4495352163529299
+temperature,Température (K),-0.01382724373478973,-0.3802226960372881
+dust_aerosol_003_055_mixing_ratio,Poussière (fin),-0.013564019231311706,-0.3729831819213329
+metar_temperature_c,Température (°C),-0.0004553834455210509,-0.012520975954243107
+h2o2,H₂O₂,0.03625816771606189,0.9975907480723132
+organic_nitrates,Nitrates organiques,0.03813352189220096,1.0492616811295103
+hydrophobic_black_carbon_aerosol_mixing_ratio,Carbone noir (hydrophobe),0.03862807292044496,1.0628896884203172
+nitrogen_dioxide_mass_mixing_ratio,Dioxyde d'azote (NO₂),0.04503599347642439,1.2395427782257822
+ethane,Éthane,0.052965811587676055,1.4583661153036191
+hydrophilic_black_carbon_aerosol_mixing_ratio,Carbone noir (hydrophile),0.05443286375693243,1.498878499052505
+nitrogen_monoxide_mass_mixing_ratio,Monoxyde d'azote,0.05646270412831895,1.5549482886003554
+hydrophobic_organic_matter_aerosol_mixing_ratio,Matière organique (hydrophobe),0.07275281794389259,2.005686836603716
+hydrophilic_organic_matter_aerosol_mixing_ratio,Matière organique (hydrophile),0.07616084544409783,2.1001769049993104
+sulphate_aerosol_mixing_ratio,Aérosol sulfaté,0.07746852181911383,2.1364526621361684
+carbon_monoxide_mass_mixing_ratio,Monoxyde de carbone,0.08043874762805223,2.2188900930838042
+sulphur_dioxide_mass_mixing_ratio,Dioxyde de soufre (SO₂),0.08058754094231457,2.2230213380436674
+isoprene,Isoprène,0.0882929920883059,2.437174185502121
+formaldehyde,Formaldéhyde,0.0904558828282712,2.497363613898561
+c3h8,Propane (C3H8),0.09705578452036849,2.681251214582659
